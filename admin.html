@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Admin Panel</title>
+
+    <style>
+
+        :root {
+            --bg: #141b22;
+            --panel: #1b252f;
+            --panel-2: #243240;
+            --border: #34495c;
+            --text: #cfe9d6;
+            --muted: #7d9a8a;
+            --green: #4af626;
+            --cyan: #4fd8ff;
+            --amber: #ffcb47;
+            --red: #ff5f56;
+            --yellow: #ffbd2e;
+            --dot-green: #27c93f;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Fira Code", "Cascadia Code", "JetBrains Mono",
+                         Consolas, "Courier New", monospace;
+            background:
+                repeating-linear-gradient(
+                    0deg,
+                    rgba(74, 246, 38, 0.025) 0,
+                    rgba(74, 246, 38, 0.025) 1px,
+                    transparent 1px,
+                    transparent 3px
+                ),
+                var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 40px 16px;
+            min-height: 100vh;
+            font-size: 15px;
+        }
+
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* ---------- Terminal window ---------- */
+
+        .window {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 28px;
+            overflow: hidden;
+            box-shadow: 0 0 24px rgba(74, 246, 38, 0.08),
+                        0 10px 30px rgba(0, 0, 0, 0.35);
+        }
+
+        .titlebar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            background: var(--panel-2);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .dot.r { background: var(--red); }
+        .dot.y { background: var(--yellow); }
+        .dot.g { background: var(--dot-green); }
+
+        .title {
+            margin-left: 10px;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .body {
+            padding: 22px;
+        }
+
+        /* ---------- Text ---------- */
+
+        h1 {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--green);
+            margin: 0 0 6px;
+            text-shadow: 0 0 10px rgba(74, 246, 38, 0.45);
+        }
+
+        h1::after {
+            content: "_";
+            animation: blink 1s steps(1) infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        .sub {
+            color: var(--muted);
+            margin: 0 0 22px;
+        }
+
+        .prompt {
+            color: var(--cyan);
+            margin: 0 0 16px;
+            font-weight: 600;
+        }
+
+        .prompt .user { color: var(--green); }
+        .prompt .cmd  { color: var(--amber); }
+
+        .status {
+            min-height: 22px;
+            margin: 14px 0 0;
+            font-size: 14px;
+        }
+
+        .status.ok  { color: var(--green); }
+        .status.err { color: var(--red); }
+
+        /* ---------- Inputs ---------- */
+
+        .form-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .field {
+            flex: 1;
+            min-width: 150px;
+            display: flex;
+            align-items: center;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 0 10px;
+        }
+
+        .field:focus-within {
+            border-color: var(--green);
+            box-shadow: 0 0 10px rgba(74, 246, 38, 0.25);
+        }
+
+        .field span {
+            color: var(--green);
+            font-weight: 700;
+            margin-right: 8px;
+        }
+
+        input {
+            flex: 1;
+            width: 100%;
+            padding: 12px 0;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 15px;
+            caret-color: var(--green);
+        }
+
+        input::placeholder {
+            color: var(--muted);
+        }
+
+        /* ---------- Buttons ---------- */
+
+        button {
+            padding: 11px 18px;
+            background: transparent;
+            border: 1px solid var(--green);
+            border-radius: 4px;
+            color: var(--green);
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+        }
+
+        button::before { content: "[ "; }
+        button::after  { content: " ]"; }
+
+        button:hover {
+            background: var(--green);
+            color: #0b1410;
+            box-shadow: 0 0 14px rgba(74, 246, 38, 0.5);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        button.edit {
+            border-color: var(--amber);
+            color: var(--amber);
+        }
+
+        button.edit:hover {
+            background: var(--amber);
+            color: #1a1400;
+            box-shadow: 0 0 14px rgba(255, 203, 71, 0.5);
+        }
+
+        button.danger {
+            border-color: var(--red);
+            color: var(--red);
+        }
+
+        button.danger:hover {
+            background: var(--red);
+            color: #1a0000;
+            box-shadow: 0 0 14px rgba(255, 95, 86, 0.5);
+        }
+
+        button.small {
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .card-header .prompt {
+            margin: 0;
+        }
+
+        /* ---------- Table ---------- */
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--cyan);
+            padding: 10px 12px;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        td:first-child { color: var(--amber); }
+        td:nth-child(2) { color: #ffffff; }
+        td:nth-child(4) { color: var(--green); }
+
+        td.actions {
+            white-space: nowrap;
+            text-align: right;
+        }
+
+        td.actions button {
+            margin-left: 6px;
+        }
+
+        tbody tr:hover {
+            background: var(--panel-2);
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody:empty::after {
+            content: "-- no records --";
+            display: block;
+            padding: 16px 12px;
+            color: var(--muted);
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+    <div class="container">
+
+
+        <!-- LOGIN -->
+
+        <div class="window" id="loginView" style="max-width: 460px; margin: 60px auto;">
+
+            <div class="titlebar">
+                <span class="dot r"></span>
+                <span class="dot y"></span>
+                <span class="dot g"></span>
+                <span class="title">sudo: authentication required</span>
+            </div>
+
+            <div class="body">
+
+                <h1>Admin Login</h1>
+                <p class="sub">// restricted area</p>
+
+                <label class="field">
+                    <span>#</span>
+                    <input
+                        type="password"
+                        id="password"
+                        placeholder="password"
+                        onkeydown="if (event.key === 'Enter') login()"
+                    >
+                </label>
+
+                <p style="margin: 16px 0 0;">
+                    <button onclick="login()">Login</button>
+                </p>
+
+                <p class="status" id="loginStatus"></p>
+
+            </div>
+
+        </div>
+
+
+        <!-- ADMIN PANEL -->
+
+        <div id="adminView" class="hidden">
+
+            <!-- CREATE / UPDATE -->
+
+            <div class="window">
+
+                <div class="titlebar">
+                    <span class="dot r"></span>
+                    <span class="dot y"></span>
+                    <span class="dot g"></span>
+                    <span class="title">root@student-db: ~/admin</span>
+                </div>
+
+                <div class="body">
+
+                    <div class="card-header">
+                        <h1>Admin Panel</h1>
+                        <button class="danger" onclick="logout()">Logout</button>
+                    </div>
+
+                    <p class="prompt">
+                        <span class="user">root@student-db</span>:~$
+                        <span class="cmd" id="formCmd">add_student</span> --new
+                    </p>
+
+                    <div class="form-row">
+
+                        <label class="field">
+                            <span>&gt;</span>
+                            <input type="text" id="name" placeholder="name">
+                        </label>
+
+                        <label class="field">
+                            <span>&gt;</span>
+                            <input type="text" id="course" placeholder="course">
+                        </label>
+
+                        <label class="field">
+                            <span>&gt;</span>
+                            <input type="number" id="yearLevel" placeholder="year_level">
+                        </label>
+
+                        <button id="saveBtn" onclick="saveStudent()">Add</button>
+                        <button id="cancelBtn" class="danger hidden" onclick="cancelEdit()">Cancel</button>
+
+                    </div>
+
+                    <p class="status" id="status"></p>
+
+                </div>
+
+            </div>
+
+
+            <!-- READ / EDIT / DELETE -->
+
+            <div class="window">
+
+                <div class="titlebar">
+                    <span class="dot r"></span>
+                    <span class="dot y"></span>
+                    <span class="dot g"></span>
+                    <span class="title">root@student-db: ~/students</span>
+                </div>
+
+                <div class="body">
+
+                    <div class="card-header">
+
+                        <p class="prompt">
+                            <span class="user">root@student-db</span>:~$
+                            <span class="cmd">SELECT</span> * FROM students;
+                        </p>
+
+                        <button onclick="loadStudents()">Refresh</button>
+
+                    </div>
+
+                    <div class="table-wrap">
+
+                        <table>
+
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Course</th>
+                                    <th>Year Level</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="studentTable"></tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <script>
+
+        let token = sessionStorage.getItem("adminToken");
+        let students = [];
+        let editingId = null;
+
+
+        // ---------- helpers ----------
+
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;");
+        }
+
+        function setStatus(message, isError) {
+            const el = document.getElementById("status");
+            el.textContent = message;
+            el.className = "status " + (isError ? "err" : "ok");
+        }
+
+        async function api(path, options = {}) {
+            const res = await fetch(path, {
+                ...options,
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-admin-token": token || ""
+                }
+            });
+
+            if (res.status === 401 && path !== "/api/admin/login") {
+                showLogin("Session expired. Please log in again.");
+            }
+
+            return res;
+        }
+
+        function showLogin(message) {
+            token = null;
+            sessionStorage.removeItem("adminToken");
+            document.getElementById("adminView").classList.add("hidden");
+            document.getElementById("loginView").classList.remove("hidden");
+            const el = document.getElementById("loginStatus");
+            el.textContent = message || "";
+            el.className = "status err";
+        }
+
+        function showAdmin() {
+            document.getElementById("loginView").classList.add("hidden");
+            document.getElementById("adminView").classList.remove("hidden");
+            loadStudents();
+        }
+
+
+        // ---------- auth ----------
+
+        async function login() {
+            const password = document.getElementById("password").value;
+
+            const res = await api("/api/admin/login", {
+                method: "POST",
+                body: JSON.stringify({ password })
+            });
+
+            if (!res.ok) {
+                showLogin("Access denied: wrong password.");
+                return;
+            }
+
+            const data = await res.json();
+            token = data.token;
+            sessionStorage.setItem("adminToken", token);
+            document.getElementById("password").value = "";
+            showAdmin();
+        }
+
+        async function logout() {
+            await api("/api/admin/logout", { method: "POST" });
+            showLogin("Logged out.");
+        }
+
+
+        // ---------- read ----------
+
+        async function loadStudents() {
+            const res = await fetch("/api/students");
+            students = await res.json();
+
+            const table = document.getElementById("studentTable");
+            table.innerHTML = "";
+
+            students.forEach((s) => {
+                table.innerHTML += `
+                    <tr>
+                        <td>${s.id}</td>
+                        <td>${escapeHtml(s.name)}</td>
+                        <td>${escapeHtml(s.course)}</td>
+                        <td>${s.year_level}</td>
+                        <td class="actions">
+                            <button class="edit small" onclick="editStudent(${s.id})">Edit</button>
+                            <button class="danger small" onclick="deleteStudent(${s.id})">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+
+        // ---------- create / update ----------
+
+        async function saveStudent() {
+            const name = document.getElementById("name").value.trim();
+            const course = document.getElementById("course").value.trim();
+            const yearLevel = document.getElementById("yearLevel").value;
+
+            if (!name || !course || !yearLevel) {
+                setStatus("Fill in all fields.", true);
+                return;
+            }
+
+            const body = JSON.stringify({ name, course, year_level: yearLevel });
+
+            const res = editingId
+                ? await api("/api/admin/students/" + editingId, { method: "PUT", body })
+                : await api("/api/admin/students", { method: "POST", body });
+
+            if (!res.ok) {
+                setStatus("Error: request failed.", true);
+                return;
+            }
+
+            setStatus(editingId ? "Student updated." : "Student added.", false);
+            cancelEdit(true);
+            loadStudents();
+        }
+
+        function editStudent(id) {
+            const s = students.find((row) => row.id === id);
+            if (!s) return;
+
+            editingId = id;
+            document.getElementById("name").value = s.name;
+            document.getElementById("course").value = s.course;
+            document.getElementById("yearLevel").value = s.year_level;
+
+            document.getElementById("formCmd").textContent = "edit_student";
+            document.getElementById("saveBtn").textContent = "Update";
+            document.getElementById("cancelBtn").classList.remove("hidden");
+            setStatus("Editing student #" + id, false);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        function cancelEdit(keepStatus) {
+            editingId = null;
+            document.getElementById("name").value = "";
+            document.getElementById("course").value = "";
+            document.getElementById("yearLevel").value = "";
+
+            document.getElementById("formCmd").textContent = "add_student";
+            document.getElementById("saveBtn").textContent = "Add";
+            document.getElementById("cancelBtn").classList.add("hidden");
+            if (!keepStatus) setStatus("", false);
+        }
+
+
+        // ---------- delete ----------
+
+        async function deleteStudent(id) {
+            if (!confirm("Delete student #" + id + "?")) return;
+
+            const res = await api("/api/admin/students/" + id, { method: "DELETE" });
+
+            if (!res.ok) {
+                setStatus("Error: could not delete.", true);
+                return;
+            }
+
+            setStatus("Student deleted.", false);
+            loadStudents();
+        }
+
+
+        // ---------- start ----------
+
+        if (token) {
+            showAdmin();
+        }
+
+    </script>
+
+</body>
+
+</html>
